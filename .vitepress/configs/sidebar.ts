@@ -1,9 +1,18 @@
 export default {
-  '/fe/basics/': [],
   '/fe/engineering/': [
+    { text: 'HTML 理论知识点', link: '/fe/engineering/00-html' },
     {
       text: '前端框架认知',
-      link: '/fe/engineering/00-deep-thought-frameworks',
+      link: '/fe/engineering/01-deep-thought-frameworks',
+    },
+    {
+      text: 'Node',
+      items: [
+        {
+          text: '包管理',
+          link: '/fe/engineering/02-package-management',
+        },
+      ],
     },
   ],
   '/fe/css/': [

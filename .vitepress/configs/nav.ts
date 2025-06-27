@@ -4,11 +4,7 @@ export default [
   {
     text: '前端',
     items: [
-      {
-        text: '现代前端开发',
-        link: '/fe/engineering/00-deep-thought-frameworks',
-      },
-      { text: 'Web 基础', link: '/fe/basics/01-html' },
+      { text: '现代前端开发', link: '/fe/engineering/00-html' },
       { text: 'JavaScript', link: '/fe/js/' },
       { text: 'CSS', link: '/fe/css/00-basics' },
     ],
