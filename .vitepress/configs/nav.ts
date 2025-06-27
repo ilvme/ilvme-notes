@@ -10,5 +10,6 @@ export default [
     ],
   },
   { text: 'DevOps', link: '/2' },
+  { text: 'Blog', link: '/blogs/' },
   { text: '关于', link: '/about' },
 ];

@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitepress';
 import nav from './configs/nav';
 import sidebar from './configs/sidebar';
+import tailwindcss from '@tailwindcss/vite'
+
 
 export default defineConfig({
   title: '林深时觉寒的技术笔记',
@@ -32,5 +34,11 @@ export default defineConfig({
       message: 'Released under the MIT License.',
       copyright: 'Copyright © 2019-present 林深时觉寒',
     },
+  },
+
+
+
+  vite: {
+    plugins: [tailwindcss()],
   },
 });
