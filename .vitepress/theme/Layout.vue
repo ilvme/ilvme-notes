@@ -19,8 +19,8 @@ provide('toggle-appearance', async ({ clientX: x, clientY: y }: MouseEvent) => {
     `circle(0px at ${x}px ${y}px)`,
     `circle(${Math.hypot(
       Math.max(x, innerWidth - x),
-      Math.max(y, innerHeight - y)
-    )}px at ${x}px ${y}px)`
+      Math.max(y, innerHeight - y),
+    )}px at ${x}px ${y}px)`,
   ]
 
   await document.startViewTransition(async () => {
@@ -33,8 +33,8 @@ provide('toggle-appearance', async ({ clientX: x, clientY: y }: MouseEvent) => {
     {
       duration: 300,
       easing: 'ease-in',
-      pseudoElement: `::view-transition-${isDark.value ? 'old' : 'new'}(root)`
-    }
+      pseudoElement: `::view-transition-${isDark.value ? 'old' : 'new'}(root)`,
+    },
   )
 })
 </script>
@@ -42,7 +42,9 @@ provide('toggle-appearance', async ({ clientX: x, clientY: y }: MouseEvent) => {
 <template>
   <DefaultTheme.Layout>
     <template #aside-outline-before>
-      <span style="color: var(--vp-c-indigo-1); font-weight: 900;margin-bottom: 5px;font-size: 20px;">
+      <span
+        style="color: var(--vp-c-indigo-1); font-weight: 900; margin-bottom: 5px; font-size: 20px"
+      >
         ㆆᵕㆆ…
       </span>
     </template>
