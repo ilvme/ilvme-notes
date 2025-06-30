@@ -50,4 +50,35 @@ export default {
     },
   ],
   '/fe/javascript/': [],
-};
+
+  '/devops/': [
+    {
+      text: 'Linux',
+      items: [
+        { text: '文件压缩与解压', link: '/devops/linux' },
+        { text: 'vim 操作', link: '/devops/linux' },
+      ],
+    },
+    {
+      text: 'Git',
+      items: [
+        { text: 'Git 配置', link: '/devops/git/' },
+        { text: 'Git 高级', link: '/devops/git' },
+      ],
+    },
+    {
+      text: '数据库',
+      items: [
+        { text: 'Redis', link: '/devops/git/' },
+        { text: 'MySQL', link: '/devops/git' },
+      ],
+    },
+    {
+      text: '其他',
+      items: [
+        { text: 'Docker', link: '' },
+        { text: 'Nginx', link: '' },
+      ],
+    },
+  ],
+}

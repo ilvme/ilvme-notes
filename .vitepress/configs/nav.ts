@@ -9,7 +9,7 @@ export default [
       { text: 'CSS', link: '/fe/css/00-basics' },
     ],
   },
-  { text: 'DevOps', link: '/2' },
+  { text: 'DevOps', link: '/devops/git/' },
   { text: 'Blog', link: '/blogs/' },
   { text: '关于', link: '/about' },
-];
+]
