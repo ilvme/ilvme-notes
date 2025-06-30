@@ -4,8 +4,9 @@ import { computed } from 'vue'
 import { formatTime } from '../../../scripts/utils.js'
 import { useRouter } from 'vitepress'
 
-const posts = computed(() => originalPosts.filter((item) => item.frontmatter.layout !== 'page'))
-console.log(posts.value)
+const posts = computed(() =>
+  originalPosts.filter((item) => item.frontmatter.layout !== 'page' && item.frontmatter.published),
+)
 
 const router = useRouter()
 const onGoToPostPage = ({ url }) => {
@@ -15,15 +16,20 @@ const onGoToPostPage = ({ url }) => {
 
 <template>
   <div style="width: 60%; max-width: 800px; margin: 0 auto">
-    <div v-for="post in posts" class="blog-item-container" @click="onGoToPostPage(post)">
-      <Badge v-for="tag in post.frontmatter.tags" :text="tag" type="danger" />
-
-      <h2 class="post-title">{{ post.frontmatter.title }}</h2>
-      <p style="font-size: 0.8rem">{{ post.frontmatter.description }}</p>
-      <p style="font-size: 0.8rem; text-align: right">
-        {{ formatTime(post.frontmatter.date, 'YYYY-MM-DD') }}
-      </p>
+    <div v-if="posts.length === 0">
+      <p>暂无文章</p>
     </div>
+    <template v-else>
+      <div v-for="post in posts" class="blog-item-container" @click="onGoToPostPage(post)">
+        <Badge v-for="tag in post.frontmatter.tags" :text="tag" type="danger" />
+
+        <h2 class="post-title">{{ post.frontmatter.title }}</h2>
+        <p style="font-size: 0.8rem">{{ post.frontmatter.description }}</p>
+        <p style="font-size: 0.8rem; text-align: right">
+          {{ formatTime(post.frontmatter.date, 'YYYY-MM-DD') }}
+        </p>
+      </div>
+    </template>
   </div>
 </template>
 
