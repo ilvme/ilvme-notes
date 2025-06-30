@@ -12,31 +12,19 @@ export default defineConfig({
   srcExclude: ['**/README.md', '**.todo.md'],
 
   themeConfig: {
-    search: {
-      provider: 'local',
-    },
-    outline: {
-      label: '目录',
-      level: [2, 3],
-    },
-    nav,
+    search: { provider: 'local' },
+    outline: { label: '目录', level: [2, 3] },
 
+    nav,
     sidebar,
 
     socialLinks: [{ icon: 'github', link: 'https://github.com/vuejs/vitepress' }],
 
-    docFooter: {
-      prev: '上一篇',
-      next: '下一篇',
-    },
+    docFooter: { prev: '上一篇', next: '下一篇' },
 
     footer: {
       message: 'Released under the MIT License.',
       copyright: 'Copyright © 2019-present 林深时觉寒',
     },
-  },
-
-  vite: {
-    plugins: [tailwindcss()],
   },
 })
