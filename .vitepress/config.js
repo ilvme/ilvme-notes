@@ -1,8 +1,7 @@
-import { defineConfig } from 'vitepress';
-import nav from './configs/nav';
-import sidebar from './configs/sidebar';
+import { defineConfig } from 'vitepress'
+import nav from './configs/nav'
+import sidebar from './configs/sidebar'
 import tailwindcss from '@tailwindcss/vite'
-
 
 export default defineConfig({
   title: '林深时觉寒的技术笔记',
@@ -13,6 +12,9 @@ export default defineConfig({
   srcExclude: ['**/README.md', '**.todo.md'],
 
   themeConfig: {
+    search: {
+      provider: 'local',
+    },
     outline: {
       label: '目录',
       level: [2, 3],
@@ -21,9 +23,7 @@ export default defineConfig({
 
     sidebar,
 
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/vuejs/vitepress' },
-    ],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/vuejs/vitepress' }],
 
     docFooter: {
       prev: '上一篇',
@@ -36,9 +36,7 @@ export default defineConfig({
     },
   },
 
-
-
   vite: {
     plugins: [tailwindcss()],
   },
-});
+})
