@@ -7,8 +7,8 @@ export default defineConfig({
   description: 'A VitePress Site',
   lang: 'zh-CN',
 
-  srcDir: 'notes',
-  // outDir: 'dist',
+  srcDir: './notes',
+  outDir: './dist',
   srcExclude: ['**/README.md', '**.todo.md'],
 
   themeConfig: {
@@ -21,6 +21,13 @@ export default defineConfig({
     socialLinks: [{ icon: 'github', link: 'https://github.com/vuejs/vitepress' }],
 
     docFooter: { prev: '上一篇', next: '下一篇' },
+
+    notFound: {
+      code: '404',
+      title: '页面未找到',
+      quote: '你来到了没有知识的荒原',
+      linkText: '回到最初',
+    },
 
     footer: {
       message: 'Released under the MIT License.',
