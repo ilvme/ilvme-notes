@@ -8,6 +8,7 @@ export default defineConfig({
   lang: 'zh-CN',
 
   srcDir: 'notes',
+  outDir: 'dist',
   srcExclude: ['**/README.md', '**.todo.md'],
 
   themeConfig: {
