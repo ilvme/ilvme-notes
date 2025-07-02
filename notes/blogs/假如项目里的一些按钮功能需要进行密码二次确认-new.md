@@ -425,9 +425,6 @@ function realDelUser(id) {  }
 				</tempalte>
 			</el-table-item>
 		</el-table>
-	
-		<!-- 引入密码验证组件 -->
-		<PasswordVarification ref="passwordVerificationRef" @real-do="nextDo"/>
 	</div>
 </template>
 ```
