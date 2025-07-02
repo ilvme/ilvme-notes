@@ -1,6 +1,6 @@
 ---
-title: 假如项目里的一些按钮功能需要进行密码二次确认（旧版，基于 Vue2）
-date: 2020-07-03
+title: 假如项目里的一些按钮功能需要进行密码二次确认（新版，基于 Vu3）
+date: 2025-07-03
 tags: [步骤, Vue]
 description: 
 published: true
@@ -83,27 +83,25 @@ const treeData = [
 
 ## 目前实现逻辑如下
 
-### 第一步：基于 Vuex 封装验证树形数据的存储与校验
+### 第一步：基于 Pinia 封装验证树形数据的存储与校验
 
 ```jsx
-const safe = {
-	state: {
-		verifyTree: []
-	},
+export const useSafeStore = defineStore('safe', () => {
+	const verifyTree = ref([])
 	
-	mutations: {
-		UPDATE_VERIFY_TREE: (state, verifyTree) => {
-			state.verifyTree = verifyTree
-		}
-	},
-	
-	getters: {
-		// 提供一个便捷查询是否需要密码的方法，需要传入按钮指定的唯一 key
-		needVerify: state => btnKey => {
-			return flatTree(state.verifyTree).find(item => item.id === btnKey).checked
-		}
+	// 更新需要二次验证树数据
+	function updateVerifyTree(val) => {
+		verifyTree.value = val	
 	}
-}
+	
+	// 提供一个便捷查询是否需要密码的方法，需要传入按钮指定的唯一 key
+	// 此处未使用 computed 是因为需要传参
+	function needVerify(btnKey) {
+		return flatTree(state.verifyTree).find(item => item.id === btnKey).checked
+	}
+	
+	return {verifyTree, updateVerifyTree, needVerify}
+})
 
 // 将密码验证树数据摊平，此为定制方法，不通用
 export const flatTree = treeData => {
@@ -123,8 +121,6 @@ export const flatTree = treeData => {
 	})
 	return flatArr
 }
-
-export default safe
 ```
 
 这个树结构里的数据需要在项目刚登录或页面刷新时请求后端更新数据。这个过程可以放在登录后获取当前系统登录用户信息的接口里。
@@ -132,60 +128,68 @@ export default safe
 ### 第二步：简单实现密码验证配置页面（重点是树形结构的数据）
 
 ```html
-<script>
-	export default {
-		data() {
-			return {
-				ready: false, // 页面是否加载完成
-				
-				treeData: [], // 树数据
-				
-				props: { label: 'name', children: 'children', isLeaf: 'isLeaf' }
-			}
-		},
+<script setup>
+// ……省略其余导入
+import { flatTree, useSafeStore } from '@/store/safe.js' 
+
+const	ready = ref(false) // 页面是否加载完成
+const treeData = ref([]) // 树数据
+
+// 过滤出当前已选中的树节点
+const defaultCheckedKeys = computed(() => {
+	return flatTree(this.treeData)
+		.filter(item => item.isLeaf && item.checked)
+		.map(item => item.id)
+})
 		
-		computed: {
-			// 过滤出当前已选中的树节点
-			defaultCheckedKeys() {
-				return flatTree(this.treeData)
-					.filter(item => item.isLeaf && item.checked)
-					.map(item => item.id)
-			}
-		},
+async onMounted() {
+	await initTree()
+}
+
+// 保存
+const treeRef = useTemplateRef('treeRef')
+const confirmLoading = ref(false)
+async function save() {
+	try {
+		confirmLoading.value = true
 		
-		async created() {
-			await this.initTree()
-		},
+		// 这里仅获取选中的按钮的 id 与后端交互
+		await reqEditVerifyTreeData(treeRef.value.getCheckedKeys(true))
+		await initTree()
+		Toast.success('保存成功')
 		
-		methods: {
-			resetDefault() {
-			
-			},
-			async save() {
-				try {
-					// 这里仅获取选中的按钮的 id 与后端交互
-					await reqEditVerifyTreeData(this.$refs.treeRef.getCheckedKeys(true))
-					await this.initTree()
-					Toast.success('保存成功')
-				} catch (err) {
-					Toast.error(err)
-				}
-			},
-			
-			async initTree() {
-				this.ready = false
-				// 初始化时，请求验证树渲染页面，同时将数据更新到 Vuex 的 safe 模块
-				try {
-					const { data } = await reqVerifyTreeData()
-					this.treeData = data
-					this.$store.commit('UPDATE_VERIFY_TREE', data)
-					this.ready = true
-				} catch (err) {
-					Toast.error(err)
-				}
-			}
-		}
+		confirmLoading.value = false
+	} catch (err) {
+		confirmLoading.value = false
+		Toast.error(err)
 	}
+}
+
+const safeStore = useSafeStore()
+
+// 请求后端，恢复默认值，更新 safe 模块数据
+async function resetDefault() {
+	ready.value = false
+	treeData.value = await reqDefaultVerifyTree()
+	safeStore.updateVerifyTree(data)
+	ready.value = true
+}
+
+async function initTree() {
+	// 初始化时，请求验证树渲染页面，同时将数据更新到 Pinia 的 safe 模块
+	try {
+	  ready.value = false
+	  
+		const { data } = await reqVerifyTreeData()
+		
+		treeData.value = data
+		safeStore.updateVerifyTree(data)
+		
+		ready.value = true
+	} catch (err) {
+		Toast.error(err)
+	}
+}
 </script>
 
 <template>
@@ -194,12 +198,11 @@ export default safe
 		v-loading="!ready"
 		node-key="id"
 		:data="treeData"
-		:props=props
+		:props="{ label: 'name', children: 'children', isLeaf: 'isLeaf' }"
 		show-checkbox
 		default-expand-all
 		:default-checked-keys="defaultCheckedKeys"
-	>
-	</el-tree>
+	/>
 	<div>
 		<el-button @click=resetDefault>恢复默认值</el-button>
 		<el-button type="primary" @click=save>保存</el-button>
@@ -207,113 +210,145 @@ export default safe
 </template>
 ```
 
-### 第三步：封装这个二次密码输入组件 `PasswordVerification`
+### 第三步：封装密码验证响应式状态中心
 
-注意 paramData 是先接收父级组件按钮方法需要的参数，然后 `emit` 的时候再传递回去。
+控制二次密码验证弹窗是否显示、密码二次验证后需要执行的真正函数以及参数
+
+```jsx
+import { useSafeStore } from '@/store/safe.js'
+
+/**
+ * 密码验证响应式状态中心
+ * show 密码验证弹窗显隐
+ * callback 真实父组件事件回调函数
+ * params 回调函数参数，数组
+ */
+export const verificationStore = reactive(
+	show: false,
+	callback: null,
+	params: null,
+	
+	async init(key, callback, params = [])  {
+		this.callback = callback
+		this.params = params
+		
+		// 判断是否需要二次密码验证
+		const safeStore = useSafeStore()
+		
+		if(safeStore.needVerify(key)) {
+			this.show = true
+		} else {
+			await this.handle()
+		}
+	},
+	
+	async handle() {
+		await this.callback(...params)
+	}
+)
+```
+
+### 第四步：封装这个二次密码输入组件 `PasswordVerification`
 
 ```html
-<script>
-	export default {
-		name: 'PasswordVerification',
-		data() {
-			return {
-				show: false,
-				paramData: null, // 自定义数据，父组件传来，验证成功再传递给父组件
-				
-				userForm: {
-					username: this.$store.getters.username,
-					password: ''
-				},
-				
-				rules: {
-					password: [{required: true, trigger : 'blur', message: '密码不能为空'}]
-				}
+<script setup>
+import { verificationStore } from '@/store/mini/verification.js'
+
+defineOptions({ name: 'PasswordVerification' })
+
+const {show} =  toRefs(verificationStore)
+		
+const userStore = useUserStore()
+const userForm = ref({
+	username: userStore.username,
+	password: ''
+})
+		
+const rules = reactive({
+	password: [{required: true, trigger : 'blur', message: '密码不能为空'}]
+})
+
+const userFormRef = useTemplateRef('userFormRef')
+const verifying = ref(false)
+
+// 验证方法，请求后端接口，验证成功则回调父组件的指定方法
+function onVerify() {
+	userFormRef.value.validate(async (valid) => {
+		if(valid) {
+			try {
+				verifying.value = true
+				await reqVerifyPassword(userForm.value)
+				await verificationStore.handle()
+				show.value = false
+			} catch (e) {
+				verifying.value = false
 			}
-		},
-		methods: {
-			// 验证方法，请求后端接口，验证成功则回调父组件的指定方法
-			verify() {
-				this.$refs.userFormRef.validate(valid => {
-					if(valid) {
-						reqVerifyPassword(this.userForm)
-							.then(() => {
-								this.show = true
-								this.$emit('real-do', this.paramData)
-							})
-					}
-				})
-			},
-			// 打开二次密码验证弹窗，供外界调用
-			open(paramData) {
-				this.paramData = paramData
-				this.userForm.password = ''
-				this.show = true
-			},
-			cancel() {
-				this.paramData = null
-				this.show = true
-			},
 		}
+	})
+}
+
+function init() {
+	userForm.value = {
+		username: userStore.username,
+		password: ''
 	}
+	verifying.value = true
+}
+
+function onCancel() {
+	show.value = false
+}
 </script>
 
 <template>
 	<el-dialog
-		:close-on-click-model="false"
 		title="用户密码验证"
 		width="400px"
-		:visible.sync="show"
+		:model-value="show"
+		@close="show = false"
+		@open="init"
 		destroy-on-close
+		:close-on-click-model="false"
 	>
 		<el-form ref="userFormRef" label-width="80px" :rules="rules" :model="userForm">
 			<el-form-item label="用户名" prop="username">
-		    <el-input v-model="userForm.username" disabled style="width: 200px"></el-input>
+		    <el-input v-model="userForm.username" disabled />
 		  </el-form-item>
-		  <el-form-item label="密码" prop="checkPass">
-		    <el-input type="password" v-model="userForm.password" style="width: 200px"></el-input>
+		  <el-form-item label="密码" prop="password">
+		    <el-input type="password" v-model="userForm.password" />
 		  </el-form-item>
 		</el-form>
-		<div slot="footer">
+		<div #footer>
 			<el-button @click="cancel">取消</el-button>
 			<el-button type="primary" @click="verify">确定</el-button>
 		</div>
 	</el-dialog>
 </template>
-
-<style scoped lang="scss"></style>
 ```
 
-### 第四步：如何在页面使用，以上文 JSON 树形数据里的用户管理为例
+### 第五步：如何在页面使用，以上文 JSON 树形数据里的用户管理为例
 
-旧页面按钮逻辑大致如下：
+不含有二次密码验证的页面按钮逻辑大致如下：
 
 ```html
-<script>
-export default {
-	data() {
-		return {
-			selection: []
-		}
-	},
-	methods: {
-		addUser() {
-			// open 用户添加弹窗
-		},
-		
-		delUserBatch() {
-			if (this.selection.length === 0) {
-				Toast.warning('请至少勾选一行数据')
-				return
-			}
-			// 请求后端批量删除用户
-		},
-		
-		delUser(row) {
-			// 请求后端删除用户
-		},
-	}
+<script setup>
+const selection = ref([])
+	
+function addUser() {
+	// open 用户添加弹窗
 }
-
+		
+function delUserBatch() {
+	if (selection.value.length === 0) {
+		Toast.warning('请至少勾选一行数据')
+		return
+	}
+	// 请求后端批量删除用户
+}
+		
+function delUser(row) {
+	// 请求后端删除用户
+}
 </script>
 
 <tempalte>
@@ -338,82 +373,40 @@ export default {
 
 添加完二次验证逻辑的页面代码。
 
-需要说明的是，
-
-- 例如用户删除，表格里有，表格上方也有，但是配置是否需要二次密码验证的树形组件上，两者是不会加以区分的，统一叫「用户删除」。此时也有办法，可以根据 paramData 是否传参以及参数特征去判断选择正确的回掉方法即可，参照下文。
-- 按钮逻辑修改本质上一样，都是将原来的方法一分为二个方法，第一个方法还用原来的方法名，但是方法内容改成调用二次密码判断逻辑，第二个方法是原来方法的执行逻辑。因为拆分成两个方法，且中间经过一次弹窗确认事件，所以请注意当前按钮方法的参数是如何传递的。参照下文。
+按钮逻辑修改本质上一样，都是将原来的方法一分为二个方法，第一个方法还用原来的方法名，但是方法内容改成调用二次密码判断逻辑，第二个方法是原来方法的执行逻辑。因为拆分成两个方法，且中间经过一次弹窗确认事件，所以请注意当前按钮方法如何回调以及参数是如何传递的。参照下文。
 
 ```html
-<script>
-export default {
-	data() {
-		return {
-			selection: [],
-			currentBtnKey: '' // 当前点击的按钮 id
-		}
-	},
-	computed: {
-		// 当前点击的按钮是否需要二次密码验证
-		needVerify() {
-			return this.$store.getters.needVerify(this.currentBtnKey)
-		}
-	},
-	methods: {
-		// 添加按钮点击二次验证分配方法
-		nextDo(paramData) {
-			switch (this.currentBtnKey) {
-				case: '1-1':
-					return this.realAddUser(paramData)
-				case: '1-2':
-					return this.paramData ? this.realDelUser(paramData) : this.realDelUserBatch()
-				default:
-					Toast.error('服务器数据错误')
-			}
-		},
-		addUser() {
-			this.currentBtnKey = '1-1'
-			if (this.needVerify) {
-				// 打开密码二次验证窗口
-				this.$refs.passwordVerificationRef.open()
-			} else {
-				this.realAddUser()
-			}
-		},
-		// 这里存放原来 addUser 方法真正干的事情
-		realAddUser() { // 用户添加相关逻辑 }, 
-		
-		delUserBatch() {
-			if (this.selection.length === 0) {
-				Toast.warning('请至少勾选一行数据')
-				return
-			}
-			
-			this.currentBtnKey = '1-2'
-			if (this.needVerify) {
-				// 打开密码二次验证窗口
-				this.$refs.passwordVerificationRef.open()
-			} else {
-				this.realDelUserBatch()
-			}
-		},
-		// 这里存放原来 delUserBatch 方法真正干的事情，但是需要注意并不包括一些前端校验
-		realDelUserBatch() { // 请求后端批量删除用户 },
-		
-		// 注意这个需要传参数
-		delUser(row) {
-			this.currentBtnKey = '1-2'
-			if (this.needVerify) {
-				// 打开密码二次验证窗口
-				this.$refs.passwordVerificationRef.open(row)
-			} else {
-				this.realDelUser(row)
-			}
-		},
-		// 这里存放原来 delUserBatch 方法真正干的事情，但是需要注意并不包括一些前端校验
-		realDelUser(row) { // 请求后端删除用户 },
-		
-	}
+<script setup>
+import { verificationStore } from '@/store/mini/verification.js'
+
+const selection = ref([])
+
+async function addUser() {
+	await verificationStore.init('1-1', realAddUser)
 }
+
+// 这里存放原来 addUser 方法真正干的事情
+realAddUser() {}
+
+function delUserBatch() {
+	if (selection.value.length === 0) {
+		Toast.warning('请至少勾选一行数据')
+		return
+	}
+	
+	const ids = selection.value.map(item => item.id)
+	await verificationStore.init('1-3', realDelUserBatch, [ids])
+}
+
+// 这里存放原来 delUserBatch 方法真正干的事情，但是需要注意并不包括一些前端校验
+realDelUserBatch(ids) { }
+		
+function delUser(row) {
+	await verificationStore.init('1-3', realDelUser, [row.id])
+}
+
+// 这里存放原来 delUser 方法真正干的事情，但是需要注意并不包括一些前端校验
+function realDelUser(id) {  }
 </script>
 
 <template>
