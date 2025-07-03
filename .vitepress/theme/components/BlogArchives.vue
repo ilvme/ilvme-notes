@@ -50,6 +50,7 @@ const onGoToPostPage = ({ url }) => {
 
 .post-title {
   font-size: 1.6rem;
+  line-height: 2.2rem;
   font-weight: bold;
   margin: 10px 0;
 }
